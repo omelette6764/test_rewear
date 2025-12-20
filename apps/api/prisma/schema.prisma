@@ -1,0 +1,559 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Category {
+  tops
+  bottoms
+  shoes
+  accessories
+  other
+}
+
+enum ListingStatus {
+  draft
+  active
+  sold
+  archived
+  hidden
+}
+
+enum Condition {
+  new
+  like_new
+  good
+  fair
+  poor
+}
+
+enum MessageType {
+  text
+  image
+}
+
+enum UploadKind {
+  listing_photo
+  chat_image
+  avatar
+}
+
+enum OrderStatus {
+  pending_payment
+  paid
+  processing
+  shipped
+  completed
+  canceled
+  refunded
+  disputed
+}
+
+enum PayoutStatus {
+  held
+  eligible
+  paid
+  reversed
+  blocked
+}
+
+enum DisputeStatus {
+  needs_response
+  under_review
+  won
+  lost
+  closed
+}
+
+enum NotificationType {
+  order_paid
+  order_shipped
+  order_completed
+  message_new
+  payout_released
+  refund_created
+  dispute_opened
+  moderation_action
+}
+
+enum ReportTargetType {
+  user
+  listing
+  message
+}
+
+enum ReportStatus {
+  open
+  resolved
+}
+
+enum ReviewDirection {
+  buyer_to_seller
+  seller_to_buyer
+}
+
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  passwordHash     String
+  displayName      String
+  avatarUrl        String?
+  stripeCustomerId String?
+  isBanned         Boolean  @default(false)
+
+  ratingAvg        Float?
+  ratingCount      Int      @default(0)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  refreshTokens    RefreshToken[]
+  stripeSeller     StripeSeller?
+  listings         Listing[]
+  favorites        Favorite[]
+  chats            ChatParticipant[]
+  sentMessages     Message[] @relation("SentMessages")
+  boughtOrders     Order[]   @relation("BuyerOrders")
+  soldOrders       Order[]   @relation("SellerOrders")
+  addresses        Address[]
+  media            Media[]
+  notifications    Notification[]
+  reportsMade      Report[]  @relation("ReportsMade")
+  blocksMade       Block[]   @relation("BlocksMade")
+  blocksReceived   Block[]   @relation("BlocksReceived")
+  reviewsMade      Review[]  @relation("ReviewsMade")
+  reviewsReceived  Review[]  @relation("ReviewsReceived")
+  idempotencyKeys  IdempotencyKey[]
+  events           Event[]
+}
+
+model RefreshToken {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String
+  revokedAt  DateTime?
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model StripeSeller {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  accountId        String   @unique
+  chargesEnabled   Boolean  @default(false)
+  payoutsEnabled   Boolean  @default(false)
+  detailsSubmitted Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Listing {
+  id               String        @id @default(cuid())
+  sellerId         String
+  title            String
+  description      String?
+  priceCents       Int
+  size             String?
+  category         Category
+  status           ListingStatus @default(draft)
+
+  brand            String?
+  condition        Condition?
+  conditionScore10 Int?
+  yearAcquired     Int?
+
+  coverPhotoUrl    String?
+
+  // Reservation fields
+  reservedUntil     DateTime?
+  reservedByOrderId String? @unique
+
+  hiddenAt         DateTime?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  seller User @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  photos ListingPhoto[]
+  favorites Favorite[]
+  chats Chat[]
+  orders Order[]
+
+  @@index([sellerId])
+  @@index([status, createdAt])
+  @@index([category, status, createdAt])
+}
+
+model ListingPhoto {
+  id        String   @id @default(cuid())
+  listingId String
+  mediaId   String?
+  url       String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  media   Media?   @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+
+  @@unique([listingId, sortOrder])
+  @@index([listingId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([listingId])
+  @@index([createdAt])
+}
+
+model Media {
+  id          String     @id @default(cuid())
+  userId      String
+  kind        UploadKind
+  url         String
+  contentType String
+  sizeBytes   Int
+  uploadedAt  DateTime?
+  createdAt   DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  listingPhotos ListingPhoto[]
+  messageAttachments MessageAttachment[]
+
+  @@index([userId])
+  @@index([kind, createdAt])
+}
+
+model Chat {
+  id        String   @id @default(cuid())
+  listingId String?
+  createdAt DateTime @default(now())
+
+  listing Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  participants ChatParticipant[]
+  messages Message[]
+
+  @@index([listingId])
+}
+
+model ChatParticipant {
+  id         String   @id @default(cuid())
+  chatId     String
+  userId     String
+  unreadCount Int     @default(0)
+  lastReadAt DateTime?
+  createdAt  DateTime @default(now())
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id        String      @id @default(cuid())
+  chatId    String
+  senderId  String
+  type      MessageType @default(text)
+  text      String?
+  createdAt DateTime    @default(now())
+
+  chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  attachments MessageAttachment[]
+
+  @@index([chatId, createdAt])
+  @@index([senderId])
+}
+
+model MessageAttachment {
+  id        String   @id @default(cuid())
+  messageId String
+  mediaId   String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  media   Media   @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@index([mediaId])
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  line1      String
+  line2      String?
+  city       String
+  state      String
+  postalCode String
+  country    String
+  phone      String?
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isDefault])
+}
+
+model Order {
+  id                 String      @id @default(cuid())
+  buyerId            String
+  sellerId           String
+  listingId          String
+  status             OrderStatus @default(pending_payment)
+  totalCents         Int
+  currency           String      @default("usd")
+
+  // Stripe / payment mapping
+  paymentIntentId    String?
+  stripeChargeId     String?
+
+  // Reservation / cancellation
+  reservationExpiresAt DateTime?
+  canceledReason       String?
+
+  paidAt            DateTime?
+  shippedAt         DateTime?
+  completedAt       DateTime?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  buyer  User    @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller User    @relation("SellerOrders", fields: [sellerId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  shipping OrderShipping?
+  payment  Payment?
+  payout   Payout?
+  refund   Refund?
+  dispute  Dispute?
+  reviews  Review[]
+
+  @@index([buyerId, updatedAt])
+  @@index([sellerId, updatedAt])
+  @@index([status, updatedAt])
+  @@unique([listingId]) // one active order per listing in MVP
+}
+
+model OrderShipping {
+  id          String   @id @default(cuid())
+  orderId     String   @unique
+
+  // Snapshot of address at time of payment
+  name        String
+  line1       String
+  line2       String?
+  city        String
+  state       String
+  postalCode  String
+  country     String
+  phone       String?
+
+  // Privacy gate: seller sees full address only after payment (MVP uses a flag)
+  isVisibleToSeller Boolean @default(false)
+
+  // Seller-entered tracking
+  carrier       String?
+  trackingNumber String?
+  trackingUrl    String?
+  trackingEnteredAt DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id                   String   @id @default(cuid())
+  orderId               String   @unique
+  stripePaymentIntentId String   @unique
+  status               String
+  amountCents          Int
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Payout {
+  id              String      @id @default(cuid())
+  orderId          String      @unique
+  sellerId         String
+  status           PayoutStatus @default(held)
+  amountCents      Int
+  stripeTransferId String?
+  eligibleAt       DateTime?
+  releasedAt       DateTime?
+  reversedAt       DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  order  Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  seller User  @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([sellerId, updatedAt])
+  @@index([status, updatedAt])
+}
+
+model Refund {
+  id            String   @id @default(cuid())
+  orderId       String   @unique
+  stripeRefundId String  @unique
+  amountCents   Int
+  status        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Dispute {
+  id             String        @id @default(cuid())
+  orderId         String        @unique
+  stripeDisputeId String        @unique
+  stripeChargeId  String
+  status          DisputeStatus
+  amountCents     Int
+  reason          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([stripeChargeId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  dataJson  Json?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+}
+
+model Report {
+  id         String          @id @default(cuid())
+  reporterId String
+  targetType ReportTargetType
+  targetId   String
+  reason     String
+  details    String?
+  status     ReportStatus     @default(open)
+  createdAt  DateTime         @default(now())
+  resolvedAt DateTime?
+
+  reporter User @relation("ReportsMade", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([targetType, targetId])
+  @@index([status, createdAt])
+}
+
+model Block {
+  id         String   @id @default(cuid())
+  blockerId  String
+  blockedId  String
+  createdAt  DateTime @default(now())
+
+  blocker User @relation("BlocksMade", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+}
+
+model Review {
+  id         String          @id @default(cuid())
+  orderId    String
+  reviewerId String
+  revieweeId String
+  direction  ReviewDirection
+  rating     Int
+  comment    String?
+  createdAt  DateTime        @default(now())
+
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reviewer User  @relation("ReviewsMade", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewee User  @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, direction])
+  @@index([revieweeId, createdAt])
+}
+
+model StripeEvent {
+  id           String   @id @default(cuid())
+  stripeEventId String  @unique
+  type         String
+  payloadJson  Json
+  processedAt  DateTime?
+  createdAt    DateTime @default(now())
+
+  @@index([type, createdAt])
+}
+
+model IdempotencyKey {
+  id          String   @id @default(cuid())
+  userId      String
+  key         String
+  route       String
+  requestHash String
+  responseJson Json?
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key, route])
+  @@index([expiresAt])
+  @@index([userId, createdAt])
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  listingId String?
+  queryText String?
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+}
