@@ -29,6 +29,9 @@ const ZEnv = z.object({
   // Uploads (placeholder – wire later)
   UPLOAD_PROVIDER: z.enum(["mock", "s3", "r2"]).default("mock"),
   UPLOAD_PUBLIC_BASE_URL: z.string().url().optional(),
+    // Local uploads (dev)
+  LOCAL_UPLOAD_DIR: z.string().default(".local-uploads"),
+  MAX_UPLOAD_BYTES: z.coerce.number().int().min(1).default(20 * 1024 * 1024), // 20MB
 });
 
 export type Env = z.infer<typeof ZEnv>;
