@@ -26,6 +26,9 @@ import { ReportsModule } from "./modules/reports/reports.module";
 import { AdminModule } from "./modules/admin/admin.module";
 import { ReviewsModule } from "./modules/reviews/reviews.module";
 import { IdempotencyModule } from "./modules/idempotency/idempotency.module";
+import { ScheduleModule } from "@nestjs/schedule";
+import { ReservationsScheduler } from "./modules/reservations/reservations.scheduler";
+
 
 @Module({
   imports: [
@@ -55,6 +58,7 @@ import { IdempotencyModule } from "./modules/idempotency/idempotency.module";
     PaymentsModule,
     StripeModule,
     PayoutsModule,
+    ScheduleModule.forRoot(),
     RefundsModule,
     IdempotencyModule,
 
@@ -65,5 +69,6 @@ import { IdempotencyModule } from "./modules/idempotency/idempotency.module";
     AdminModule,
     ReviewsModule,
   ],
+  providers: [ReservationsScheduler],
 })
 export class AppModule {}

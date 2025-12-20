@@ -19,7 +19,10 @@ const ZEnv = z.object({
 
   // Payout policy
   PAYOUT_DELAY_HOURS: z.coerce.number().int().min(0).max(24 * 30).default(24), // 24h buffer
-
+  PLATFORM_FEE_BPS: z.coerce.number().int().min(0).max(5000).default(1000), // 10% in basis points
+  RESERVATION_MINUTES: z.coerce.number().int().min(1).max(120).default(15),
+  CRON_ENABLED: z.coerce.boolean().default(true),
+  
   // App URLs (used for Stripe Connect redirect + deep links)
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),
 
