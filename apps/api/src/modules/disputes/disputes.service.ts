@@ -25,13 +25,13 @@ export class DisputesService {
           stripeDisputeId: dispute.id,
           stripeChargeId: chargeId,
           status: dispute.status,
-          amountCents: dispute.amount ?? 0,
+          totalCents: dispute.amount ?? 0,
           currency: dispute.currency ?? "usd",
           reason: dispute.reason ?? null,
         },
         update: {
           status: dispute.status,
-          amountCents: dispute.amount ?? 0,
+          totalCents: dispute.amount ?? 0,
           reason: dispute.reason ?? null,
         },
       });
