@@ -58,7 +58,7 @@ export class RefundsService {
         buyerId: true,
         sellerId: true,
         status: true,
-        amountCents: true,
+        totalCents: true,
         currency: true,
         paymentIntentId: true,
       },
@@ -112,7 +112,7 @@ export class RefundsService {
         data: {
           orderId: order.id,
           stripeRefundId: refund.id,
-          amountCents: refund.amount ?? amount,
+          totalCents: refund.amount ?? amount,
           currency: refund.currency ?? order.currency ?? "usd",
           status: refund.status ?? "unknown",
           reason: args.reason ?? null,
@@ -165,7 +165,7 @@ export class RefundsService {
     if (saved.payout && saved.payout.status === "released" && saved.payout.stripeTransferId) {
       try {
         const rev = await this.stripe.transfers.createReversal(saved.payout.stripeTransferId, {
-          amount: Math.min(saved.payout.amountCents, saved.refundRow.amountCents),
+          amount: Math.min(saved.payout.totalCents, saved.refundRow.totalCents),
           metadata: { orderId: order.id, refundId: saved.refundRow.id },
         });
 
@@ -206,7 +206,7 @@ export class RefundsService {
         create: {
           orderId,
           stripeRefundId: refund.id,
-          amountCents: refund.amount ?? 0,
+          totalCents: refund.amount ?? 0,
           currency: refund.currency ?? "usd",
           status: refund.status ?? "unknown",
           reason: (refund.reason as any) ?? null,
@@ -227,3 +227,4 @@ export class RefundsService {
     return { ok: true };
   }
 }
+
