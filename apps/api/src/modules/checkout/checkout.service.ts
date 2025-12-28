@@ -60,7 +60,7 @@ export class CheckoutService {
           sellerId: listing.sellerId,
           listingId: listing.id,
           status: "pending_payment",
-          amountCents: listing.priceCents,
+          totalCents: listing.priceCents,
           currency: "usd",
           reservationExpiresAt: expiresAt,
         },
