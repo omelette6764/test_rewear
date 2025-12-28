@@ -70,7 +70,6 @@ export class CheckoutService {
       await tx.listing.update({
         where: { id: listing.id },
         data: {
-          status: "reserved",
           reservedUntil: expiresAt,
           reservedByOrderId: order.id,
         },
