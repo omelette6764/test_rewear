@@ -27,7 +27,7 @@ export class PayoutsService {
           id: true,
           status: true,
           sellerId: true,
-          amountCents: true,
+          totalCents: true,
           currency: true,
         },
       });
@@ -42,7 +42,7 @@ export class PayoutsService {
         create: {
           orderId: order.id,
           sellerId: order.sellerId,
-          amountCents: this.netPayoutAmount(order.amountCents),
+          totalCents: this.netPayoutAmount(order.totalCents),
           currency: order.currency || "usd",
           status: "eligible",
           eligibleAt,
@@ -50,7 +50,7 @@ export class PayoutsService {
         update: {
           status: "eligible",
           eligibleAt,
-          amountCents: this.netPayoutAmount(order.amountCents),
+          totalCents: this.netPayoutAmount(order.totalCents),
         },
       });
     });
@@ -77,7 +77,7 @@ export class PayoutsService {
         id: true,
         orderId: true,
         sellerId: true,
-        amountCents: true,
+        totalCents: true,
         currency: true,
       },
     });
@@ -110,7 +110,7 @@ export class PayoutsService {
           status: true,
           orderId: true,
           sellerId: true,
-          amountCents: true,
+          totalCents: true,
           currency: true,
           stripeTransferId: true,
         },
@@ -134,7 +134,7 @@ export class PayoutsService {
           id: true,
           status: true,
           sellerId: true,
-          amountCents: true,
+          totalCents: true,
           currency: true,
         },
       });
@@ -183,7 +183,7 @@ export class PayoutsService {
 
       // Create Transfer
       const transfer = await this.stripe.transfers.create({
-        amount: payout.amountCents,
+        amount: payout.totalCents,
         currency: payout.currency || "usd",
         destination: seller.stripeAccountId,
         metadata: {
