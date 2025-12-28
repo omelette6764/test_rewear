@@ -68,7 +68,7 @@ export class StripeService {
 
       await tx.order.update({
         where: { id: orderId },
-        data: { status: "processing", paidAt: new Date() },
+        data: { status: "processing" },
       });
 
       // Mark listing sold (or keep it “sold/processing” depending on your model)
