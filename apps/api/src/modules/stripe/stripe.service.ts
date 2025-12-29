@@ -22,7 +22,7 @@ export class StripeService {
     }
 
     // Dedupe if you have StripeEvent table
-    const already = await this.prisma.stripeEvent.findUnique({ where: { id: event.id } }).catch(() => null);
+    const already = await this.prisma.stripeEvent.findUnique({ where: { stripeEventId: event.id } }).catch(() => null);
     if (already?.processedAt) {
       return { received: true, deduped: true };
     }
