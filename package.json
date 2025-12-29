@@ -8,3 +8,13 @@
     "prisma:generate": "pnpm --filter @rewear/api prisma:generate"
   }
 }
+{
+  "name": "rewear",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev:api": "pnpm --filter @rewear/api dev",
+    "build:api": "pnpm --filter @rewear/api build",
+    "prisma:generate": "pnpm --filter @rewear/api prisma:generate"
+  }
+}

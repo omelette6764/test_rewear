@@ -31,7 +31,7 @@ export class OrdersService {
       items: rows.map((o) => ({
         id: o.id,
         status: o.status,
-        amountCents: o.amountCents,
+        totalCents: o.totalCents,
         currency: o.currency,
         listing: {
           id: o.listing.id,
@@ -71,7 +71,7 @@ export class OrdersService {
       items: rows.map((o) => ({
         id: o.id,
         status: o.status,
-        amountCents: o.amountCents,
+        totalCents: o.totalCents,
         currency: o.currency,
         listing: {
           id: o.listing.id,
@@ -125,7 +125,7 @@ export class OrdersService {
     return {
       id: order.id,
       status: order.status,
-      amountCents: order.amountCents,
+      totalCents: order.totalCents,
       currency: order.currency,
       listing: order.listing,
       buyer: order.buyer,

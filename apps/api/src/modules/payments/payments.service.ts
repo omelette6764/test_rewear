@@ -21,7 +21,7 @@ export class PaymentsService {
         buyerId: true,
         sellerId: true,
         status: true,
-        amountCents: true,
+        totalCents: true,
         currency: true,
         reservationExpiresAt: true,
         paymentIntentId: true,

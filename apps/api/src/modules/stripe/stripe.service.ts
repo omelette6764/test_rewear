@@ -22,7 +22,7 @@ export class StripeService {
     }
 
     // Dedupe if you have StripeEvent table
-    const already = await this.prisma.stripeEvent.findUnique({ where: { id: event.id } }).catch(() => null);
+    const already = await this.prisma.stripeEvent.findUnique({ where: { stripeEventId: event.id } }).catch(() => null);
     if (already?.processedAt) {
       return { received: true, deduped: true };
     }
@@ -68,7 +68,7 @@ export class StripeService {
 
       await tx.order.update({
         where: { id: orderId },
-        data: { status: "processing", paidAt: new Date() },
+        data: { status: "processing" },
       });
 
       // Mark listing sold (or keep it “sold/processing” depending on your model)

@@ -60,7 +60,7 @@ export class CheckoutService {
           sellerId: listing.sellerId,
           listingId: listing.id,
           status: "pending_payment",
-          amountCents: listing.priceCents,
+          totalCents: listing.priceCents,
           currency: "usd",
           reservationExpiresAt: expiresAt,
         },
@@ -70,7 +70,6 @@ export class CheckoutService {
       await tx.listing.update({
         where: { id: listing.id },
         data: {
-          status: "reserved",
           reservedUntil: expiresAt,
           reservedByOrderId: order.id,
         },
